@@ -20,6 +20,9 @@ TEST=-f docker-compose.tst.yaml
 help: ## This help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+htpasswd: ## gnerate a bcrypt username:password combination for mailhog
+	eval htpasswd -nbBC 12 ${SMTP_USERNAME} ${SMTP_PASSWORD} > ./smtp/htpasswd
+
 
 build: ## Build the docker containers for production use
 	eval ${DOCKER_COMMAND} ${PROD} build

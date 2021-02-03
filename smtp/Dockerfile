@@ -1,0 +1,7 @@
+ARG MAILHOG_VERSION=latest
+ARG MAILHOG_AUTH_FILE=/var/mailhog_auth
+
+FROM mailhog/mailhog:${MAILHOG_VERSION}
+
+COPY ./htpasswd ${MAILHOG_AUTH_FILE}
+RUN cat ${MAILHOG_AUTH_FILE}

@@ -34,3 +34,20 @@ services:
 
   database:
     image: mongo:3.4.6
+
+  smtp:
+    build:
+      context: ./smtp
+      args:
+        MAILHOG_VERSION: ${MAILHOG_VERSION}
+        MAILHOG_AUTH_FILE: /var/mailhog_auth
+    environment:
+      - MH_API_BIND_ADDR=0.0.0.0:${MAILHOG_PORT}
+      - MH_UI_BIND_ADDR=0.0.0.0:${MAILHOG_PORT}
+      - MH_SMTP_BIND_ADDR=0.0.0.0:${SMTP_PORT}
+      - MH_AUTH_FILE=/var/mailhog_auth
+      - MH_STORAGE=maildir
+    ports:
+      - ${MAILHOG_DOCKER_PORT}:${MAILHOG_PORT}
+    volumes:
+      - ./smtp/htpasswd:/var/mailhog_auth
