@@ -1,0 +1,39 @@
+---
+version: "3.7"
+services:
+  proxy:
+    build:
+      context: ./proxy
+    image: example/${APP_NAME}-proxy:${APP_VERSION}
+    ports:
+      - 80:80
+      - 443:443
+
+  ui:
+    build:
+      context: ./interface
+    image: example/${APP_NAME}-interface:${APP_VERSION}
+    depends_on:
+      - rest-api
+    environment:
+      LOGLEVEL: warn
+      PORT: 3000
+
+  rest-api:
+    build:
+      context: ./rest-api
+    image: example/${APP_NAME}-rest-api:${APP_VERSION}
+    environment:
+      LOGLEVEL: warn
+      PORT: 3000
+      XDEBUG_MODE: "off"
+    depends_on:
+      - processor
+
+  processor:
+    build:
+      context: ./processor
+    image: example/${APP_NAME}-processor:${APP_VERSION}
+    environment:
+      LOGLEVEL: warn
+      PORT: 3000
