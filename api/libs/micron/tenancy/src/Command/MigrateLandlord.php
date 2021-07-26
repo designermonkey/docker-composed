@@ -33,7 +33,6 @@ class MigrateLandlord extends Command
             'command' => 'migrate',
             '--environment' => 'landlord',
             '--configuration' => dirname(dirname(__DIR__)) . '/phinx.php',
-            '-vvv'
         ];
 
         return $this->phinx->run(new ArrayInput($arguments), $output);

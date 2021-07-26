@@ -3,6 +3,7 @@
 
 use MicronResearch\Tenancy\Command\MigrateLandlord;
 use MicronResearch\Tenancy\Command\ResetLandlord;
+use Phinx\Console\PhinxApplication;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -38,6 +39,7 @@ foreach (array(__DIR__ . '.env.defaults', './.env.defaults', './.env') as $file)
 }
 
 $app = new Application('Micron Research Tenancy');
+$phinx = new PhinxApplication();
 
 $dotenv = new Dotenv();
 $dotenv->usePutenv();
@@ -48,7 +50,7 @@ $dotenv->load(...$env_files);
 
 unset($env_files);
 
-$app->add(new MigrateLandlord());
-$app->add(new ResetLandlord());
+$app->add(new MigrateLandlord($phinx));
+$app->add(new ResetLandlord($phinx));
 
 $app->run();
