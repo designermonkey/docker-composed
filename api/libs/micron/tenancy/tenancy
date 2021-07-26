@@ -1,0 +1,54 @@
+#! /usr/bin/env php
+<?php declare(strict_types=1);
+
+use MicronResearch\Tenancy\Command\MigrateLandlord;
+use MicronResearch\Tenancy\Command\ResetLandlord;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Dotenv\Dotenv;
+
+foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php') as $file) {
+    if (file_exists($file)) {
+        define('TENANCY_COMPOSER_INSTALL', $file);
+
+        break;
+    }
+}
+
+unset($file);
+
+if (!defined('TENANCY_COMPOSER_INSTALL')) {
+    fwrite(
+        STDERR,
+        'You need to set up the project dependencies using Composer:' . PHP_EOL . PHP_EOL .
+        '    composer install' . PHP_EOL . PHP_EOL .
+        'You can learn all about Composer on https://getcomposer.org/.' . PHP_EOL
+    );
+
+    die(1);
+}
+
+require TENANCY_COMPOSER_INSTALL;
+
+$env_files = [];
+
+foreach (array(__DIR__ . '.env.defaults', './.env.defaults', './.env') as $file) {
+    if (file_exists($file)) {
+        array_push($env_files, $file);
+    }
+}
+
+$app = new Application('Micron Research Tenancy');
+
+$dotenv = new Dotenv();
+$dotenv->usePutenv();
+$dotenv->load(...$env_files);
+
+// ksort($_ENV, SORT_ASC);
+// var_dump(getenv('TENANCY_LANDLORD_PORT'));die;
+
+unset($env_files);
+
+$app->add(new MigrateLandlord());
+$app->add(new ResetLandlord());
+
+$app->run();

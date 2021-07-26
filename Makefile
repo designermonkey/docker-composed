@@ -20,6 +20,10 @@ TEST=-f docker-compose.tst.yaml
 help: ## This help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+prepare-ubuntu: ## prepare Ubuntu OS to run some of the commands
+	-lsb_release -si | grep -qi Ubuntu && sudo apt update
+	-lsb_release -si | grep -qi Ubuntu && sudo apt install apache-utils
+
 htpasswd: ## gnerate a bcrypt username:password combination for mailhog
 	eval htpasswd -nbBC 12 ${SMTP_USERNAME} ${SMTP_PASSWORD} > ./smtp/htpasswd
 

@@ -1,0 +1,34 @@
+---
+version: '3.6'
+services:
+  database:
+    image: mariadb:${MARIADB_VERSION}
+    command:
+      - --character-set-server=${MARIADB_CHARACTER_SET}
+      - --collation-server=${MARIADB_COLLATION}
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DATABASE_LANDLORD_DATABASE}
+      - MYSQL_USER=${DATABASE_LANDLORD_USERNAME}
+      - MYSQL_PASSWORD=${DATABASE_LANDLORD_PASSWORD}
+    restart: 'no'
+    ports:
+      - ${DATABASE_LANDLORD_DOCKER_PORT}:${MARIADB_PORT}
+
+  phpunit:
+    build:
+      context: ${PWD}
+      dockerfile: ${PWD}/tests/Dockerfile
+      target: phpunit
+      args:
+        php_version: ${PHP_VERSION}
+    env_file:
+      - ${PWD}/tests/.env
+    command:
+      - bin/phpunit
+      - --colors=always
+    depends_on:
+      - database
+    restart: 'no'
+    volumes:
+      - ${PWD}:/app
