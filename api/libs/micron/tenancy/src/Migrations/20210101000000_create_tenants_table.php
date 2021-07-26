@@ -2,7 +2,6 @@
 
 namespace MicronResearch\Tenancy\Migrations;
 
-use Phinx\Db\Adapter\MysqlAdapter;
 use Phinx\Db\Table;
 use Phinx\Migration\AbstractMigration;
 use Phinx\Util\Literal;
@@ -14,12 +13,25 @@ final class CreateTenantsTable extends AbstractMigration
         $table = $this->table('tenants');
 
         $this->addColumns($table);
-
-        if ($this->isMySQLAdapter()) {
-            $this->createForMySQL($table);
-        }
-
         $table->save();
+
+        if ($this->canGenerateColumns()) {
+            $table->addColumn('uuid_bin', 'binary', [
+                'length' => 16,
+                'null' => false,
+                'after' => 'id',
+            ]);
+            $table->save();
+
+            $this->addGeneratedColumn($table);
+            $this->addTrigger();
+        } else {
+            $table->addColumn('uuid', 'string', [
+                'length' => 36,
+                'null' => false,
+            ]);
+            $table->save();
+        }
     }
 
     public function down(): void
@@ -27,8 +39,8 @@ final class CreateTenantsTable extends AbstractMigration
         $table = $this->table('tenants');
         $table->drop();
 
-        if ($this->isMySQLAdapter()) {
-            $this->dropMySQL($table);
+        if ($this->canGenerateColumns()) {
+            $this->dropTrigger($table);
         }
 
         $table->save();
@@ -36,16 +48,6 @@ final class CreateTenantsTable extends AbstractMigration
 
     private function addColumns(Table $table): void
     {
-        $table->addColumn('uuid_bin', 'binary', [
-            'length' => 16,
-            'null' => false,
-        ]);
-
-        $table->addColumn('uuid', 'string', [
-            'length' => 36,
-            'null' => false,
-        ]);
-
         $table->addColumn('code', 'string', [
             'length' => 127,
             'null' => false,
@@ -60,51 +62,44 @@ final class CreateTenantsTable extends AbstractMigration
             'length' => 1,
             'null' => false,
             'signed' => 1,
-            'default' => 1,
+            'default' => 0,
         ]);
     }
 
-    private function isMySQLAdapter(): bool
+    private function canGenerateColumns(): bool
     {
-        return $this->getAdapter() instanceof MysqlAdapter;
+        return in_array($this->getAdapter()->getAdapterType(), ['pgsql', 'mysql']);
     }
 
-    private function createForMySQL(Table $table): void
+    private function addGeneratedColumn(Table $table): void
     {
-        $table->removeColumn('uuid');
-
-        $table->addColumn('uuid', Literal::from(
-            'varchar(36) generated always as lcase(insert(insert(insert(insert(hex(`uuid_bin`),9,0,'-'),14,0,'-'),19,0,'-'),24,0,'-')) stored'
-        ), [
-            'after' => 'uuid_bin',
-        ]);
-
-        $table->save();
-
-        $this->addMySQLTrigger();
+        $this->getAdapter()->execute("
+            alter table `tenants` add column `uuid` varchar(36) generated always as (lcase(insert(insert(insert(insert(hex(`uuid_bin`),9,0,'-'),14,0,'-'),19,0,'-'),24,0,'-'))) stored after `uuid_bin`
+        ");
     }
 
-    private function addMySQLTrigger(): void
+    private function addTrigger(): void
     {
         $this->getAdapter()->execute('
             drop trigger if exists `insert_uuid_bin`;
+        ');
+
+        $this->getAdapter()->execute('
             create trigger `insert_uuid_bin`
             before insert on `tenants` for each row
             begin
-                if new.`uuid` is not null
-                    set new.`uuid_bin` unhex(replace(new.`uuid`,"-",""));
-                    set new.`uuid` null;
+                if new.`uuid` is not null then
+                    set new.`uuid_bin` = unhex(replace(new.`uuid`,"-",""));
+                    set new.`uuid` = null;
                 end if;
-            end
+            end;
         ');
     }
 
-    private function dropMySQL(Table $table): void
+    private function dropTrigger(Table $table): void
     {
         $this->getAdapter()->execute('
             drop trigger if exists `insert_uuid_bin`
         ');
-
-        $table->save();
     }
 }
