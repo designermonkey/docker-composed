@@ -2,14 +2,14 @@
 
 namespace MicronResearch\Tenancy\Command;
 
-use Phinx\Console\Command\AbstractCommand;
 use Phinx\Console\PhinxApplication;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ResetLandlord extends AbstractCommand
+class ResetLandlord extends Command
 {
     protected Application $phinx;
 
