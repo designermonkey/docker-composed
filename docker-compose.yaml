@@ -9,20 +9,18 @@ services:
       - 80:80
       - 443:443
 
-  ui:
+  processor:
     build:
-      context: ./interface
-    image: example/${APP_NAME}-interface:${APP_VERSION}
-    depends_on:
-      - rest-api
+      context: ./processor
+    image: example/${APP_NAME}-processor:${APP_VERSION}
     environment:
       LOGLEVEL: warn
       PORT: 3000
 
-  rest-api:
+  api:
     build:
-      context: ./rest-api
-    image: example/${APP_NAME}-rest-api:${APP_VERSION}
+      context: ./api
+    image: example/${APP_NAME}-api:${APP_VERSION}
     environment:
       LOGLEVEL: warn
       PORT: 3000
@@ -30,10 +28,12 @@ services:
     depends_on:
       - processor
 
-  processor:
+  gui:
     build:
-      context: ./processor
-    image: example/${APP_NAME}-processor:${APP_VERSION}
+      context: ./gui
+    image: example/${APP_NAME}-gui:${APP_VERSION}
+    depends_on:
+      - api
     environment:
       LOGLEVEL: warn
       PORT: 3000

@@ -5,6 +5,11 @@ services:
     environment:
       XDEBUG_MODE: coverage
 
+  selenium-hub:
+    image: selenium/hub:4.0.0
+    ports:
+      - 4444:4444
+
   selenium-chrome:
     image: selenium/node-chrome-debug:4.0.0
     ports:
@@ -15,18 +20,13 @@ services:
       - HUB_HOST=selenium-hub
       - HUB_PORT=4444
 
-  selenium-hub:
-    image: selenium/hub:4.0.0
-    ports:
-      - 4444:4444
-
   test-runner:
     build:
       context: ./tests
     volumes:
-      - ./tests/src:/opt/app/src
+      - ./tests/selenium:/opt/app/src
     environment:
       - SELENIUM_HUB_URL=http://selenium-hub:4444/wd/hub
       - TEST_SUBJECT_URL=http://proxy/
     depends_on:
-      - chrome
+      - selenium-chrome

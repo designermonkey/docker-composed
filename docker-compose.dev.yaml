@@ -1,37 +1,6 @@
 ---
 version: "3.7"
 services:
-  interface:
-    build:
-      target: development
-    image: example/${APP_NAME}-interface:${APP_VERSION}-dev
-    restart: "unless-stopped"
-    volumes:
-      - ./interface/src:/opt/app/src
-      - ./interface/public:/opt/app/public
-
-  rest-api:
-    build:
-      target: development
-    image: example/${APP_NAME}-rest-api:${APP_VERSION}-dev
-    restart: "unless-stopped"
-    depends_on:
-      - database
-    environment:
-      LOGLEVEL: debug
-      XDEBUG_MODE: "${PHP_XDEBUG_MODE:-develop}"
-    volumes:
-      - ./rest-api/src:/opt/app/src
-      - ./rest-api/main.php:/opt/app/main.php
-
-  processor:
-    build:
-      target: development
-    image: example/${APP_NAME}-processor:${APP_VERSION}-dev
-    restart: "unless-stopped"
-    environment:
-      LOGLEVEL: debug
-
   database:
     image: mongo:3.4.6
 
@@ -51,3 +20,97 @@ services:
       - ${MAILHOG_DOCKER_PORT}:${MAILHOG_PORT}
     volumes:
       - ./smtp/htpasswd:/var/mailhog_auth
+
+  # smtp:
+  #   image: maildev/maildev:${MAILDEV_VERSION}
+  #   environmant:
+  #     - MAILDEV_IP=0.0.0.0
+  #     - MAILDEV_WEB_IP=0.0.0.0
+  #     - MAILDEV_WEB_PORT=${MAILDEV_PORT}
+  #     - MAILDEV_SMTP_PORT=${SMTP_PORT}
+  #     - MAILDEV_INCOMING_USER=${SMTP_USER}
+  #     - MAILDEV_INCOMING_PASS=${SMTP_PASS}
+  #     - MAILDEV_WEB_USER=${SMTP_USER}
+  #     - MAILDEV_WEB_PASS=${SMTP_PASS}
+  #     - MAILDEV_MAIL_DIRECTORY=/tmp/mail
+  #   restart: "unless-stopped"
+  #   ports:
+  #     - ${MAILDEV_PORT}:${MAILDEV_PORT}
+  #   volumes:
+  #     - ./smtp/mail:/tmp/mail
+
+  processor:
+    build:
+      target: development
+    image: example/${APP_NAME}-processor:${APP_VERSION}-dev
+    restart: "unless-stopped"
+    environment:
+      LOGLEVEL: debug
+
+  authdb:
+    image: postgres:11.9-alpine
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: auth
+    networks:
+      - auth
+    restart: unless-stopped
+    volumes:
+      - authdb_data:/var/lib/postgresql/data
+
+  auth:
+    image: fusionauth/fusionauth-app:latest
+    depends_on:
+      - authdb
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/fusionauth
+      DATABASE_ROOT_USERNAME: auth
+      DATABASE_ROOT_PASSWORD: auth
+      DATABASE_USERNAME: auth
+      DATABASE_PASSWORD: auth
+      FUSIONAUTH_APP_MEMORY: 512M
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_URL: http://localhost:9011
+      SEARCH_TYPE: database
+    networks:
+     - auth
+    restart: unless-stopped
+    ports:
+      - 9011:9011
+    volumes:
+      - auth_config:/usr/local/fusionauth/config
+
+  api:
+    build:
+      target: development
+    image: example/${APP_NAME}-api:${APP_VERSION}-dev
+    restart: "unless-stopped"
+    depends_on:
+      - database
+      - smtp
+    environment:
+      LOGLEVEL: debug
+      XDEBUG_MODE: "${PHP_XDEBUG_MODE:-develop}"
+    volumes:
+      - ./api/src:/opt/app/src
+      - ./api/main.php:/opt/app/main.php
+
+  gui:
+    build:
+      target: development
+    image: example/${APP_NAME}-gui:${APP_VERSION}-dev
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    restart: "unless-stopped"
+    volumes:
+      - ./gui/src:/opt/app/src
+      - ./gui/public:/opt/app/public
+
+networks:
+  auth:
+    driver: bridge
+
+volumes:
+  authdb_data:
+  auth_config:

@@ -1,0 +1,12 @@
+{
+  "downloadsFolder": "tests/cypress/downloads",
+  "fixturesFolder": "tests/cypress/fixtures",
+  "ignoreTestFiles": "tests/cypress/integration/examples/*",
+  "integrationFolder": "tests/cypress/integration",
+  "pluginsFile": "tests/cypress/plugins/index.js",
+  "screenshotsFolder": "tests/cypress/screenshots",
+  "supportFile": "tests/cypress/support/index.js",
+  "trashAssetsBeforeRuns": true,
+  "videoUploadOnPasses": false,
+  "videosFolder": "tests/cypress/videos"
+}
